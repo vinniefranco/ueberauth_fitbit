@@ -1,0 +1,2 @@
+defmodule UberauthFitbit do
+end
