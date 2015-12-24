@@ -19,8 +19,6 @@ defmodule Ueberauth.Strategy.Fitbit do
     if conn.params["state"], do: opts = Keyword.put(opts, :state, conn.params["state"])
     opts = Keyword.put(opts, :redirect_uri, callback_url(conn))
 
-    IO.inspect opts
-
     redirect!(conn, Ueberauth.Strategy.Fitbit.OAuth.authorize_url!(opts))
   end
 
@@ -34,7 +32,8 @@ defmodule Ueberauth.Strategy.Fitbit do
     if token.access_token == nil do
       set_errors!(conn, [error(token.other_params["error"], token.other_params["error_description"])])
     else
-      fetch_user(conn, token)
+      # We need to reset the client in the token here because it has basic auth in the headers
+      fetch_user(conn, Map.put(token, :client, Ueberauth.Strategy.Fitbit.OAuth.client))
     end
   end
 
@@ -54,12 +53,8 @@ defmodule Ueberauth.Strategy.Fitbit do
   Fetches the uid field from the response.
   """
   def uid(conn) do
-    uid_field =
-      conn
-      |> option(:uid_field)
-      |> to_string
-
-    conn.private.fitbit_user[uid_field]
+    # user id is the only reasonable uid field for this strategy
+    Map.get(conn.private.fitbit_token.other_params, "user_id")
   end
 
   @doc """
@@ -67,13 +62,15 @@ defmodule Ueberauth.Strategy.Fitbit do
   """
   def credentials(conn) do
     token = conn.private.fitbit_token
-    scopes = (token.other_params["scope"] || "") |> String.split(",")
+    scopes = (token.other_params["scope"] || "") |> String.split(" ")
 
     %Credentials{
       expires: !!token.expires_at,
       expires_at: token.expires_at,
       scopes: scopes,
-      token: token.access_token
+      token: token.access_token,
+      refresh_token: token.refresh_token,
+      other: %{ token_type: token.token_type }
     }
   end
 
@@ -84,8 +81,14 @@ defmodule Ueberauth.Strategy.Fitbit do
     user = conn.private.fitbit_user
 
     %Info{
-      name: user["displayName"],
-      nickname: user["nickname"]
+      name: user["fullName"] || user["displayName"],
+      nickname: user["nickname"] || user["displayName"],
+      description: user["aboutMe"],
+      image: user["avatar"],
+      urls: %{
+        avatar: user["avatar"],
+        avatar150: user["avatar150"]
+      }
     }
   end
 
@@ -100,7 +103,6 @@ defmodule Ueberauth.Strategy.Fitbit do
         token: conn.private.fitbit_token,
         user: conn.private.fitbit_user,
         gender: user["gender"],
-        about_me: user["aboutMe"],
         city: user["city"],
         state: user["state"]
       }
@@ -113,8 +115,8 @@ defmodule Ueberauth.Strategy.Fitbit do
     case OAuth2.AccessToken.get(token, "https://api.fitbit.com/1/user/-/profile.json") do
       { :ok, %OAuth2.Response{status_code: 401, body: _body } } ->
         set_errors!(conn, [error("token", "unauthorized")])
-      { :ok, %OAuth2.Response{ status_code: status_code, body: user } } when status_code in 200..399 ->
-        put_private(conn, :fitbit_user, user)
+      { :ok, %OAuth2.Response{ status_code: status_code, body: res } } when status_code in 200..399 ->
+        put_private(conn, :fitbit_user, res["user"])
       { :error, %OAuth2.Error{ reason: reason } } ->
         set_errors!(conn, [error("OAuth2", reason)])
     end

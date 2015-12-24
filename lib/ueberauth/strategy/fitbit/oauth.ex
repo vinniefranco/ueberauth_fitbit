@@ -15,11 +15,12 @@ defmodule Ueberauth.Strategy.Fitbit.OAuth do
     site: "https://api.fitbit.com",
     authorize_url: "https://www.fitbit.com/oauth2/authorize",
     token_url: "https://api.fitbit.com/oauth2/token",
+    headers: [{"Content-Type", "application/x-www-form-urlencoded"}]
   ]
 
   @doc false
-  def options(opts \\ []) do
-    config = Application.get_env(:ueberauth, Ueberauth.Strategy.Fitbit.OAuth)
+  def options(opts \\ [], app \\ Application) do
+    config = app.get_env(:ueberauth, Ueberauth.Strategy.Fitbit.OAuth)
 
     @defaults
     |> Keyword.merge(config)
@@ -53,7 +54,6 @@ defmodule Ueberauth.Strategy.Fitbit.OAuth do
   def authorize_url!(params \\ [], opts \\ []) do
     opts
     |> client
-    |> put_param(:scope, "activity profile")
     |> OAuth2.Client.authorize_url!(params)
   end
 
