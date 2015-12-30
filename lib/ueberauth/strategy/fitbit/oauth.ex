@@ -46,6 +46,15 @@ defmodule Ueberauth.Strategy.Fitbit.OAuth do
   def client(opts \\ []) do
     OAuth2.Client.new(options(opts))
   end
+  
+  @doc """
+  Construct auth signed client
+  """
+  def signed_client(opts \\ []) do
+    opts
+    |> client
+    |> put_header("Authorization", auth_sig(opts))
+  end
 
   @doc """
   Provides the authorize url for the request phase of Ueberauth. No need to call this usually.
@@ -59,8 +68,7 @@ defmodule Ueberauth.Strategy.Fitbit.OAuth do
 
   def get_token!(params \\ [], opts \\ []) do
     opts
-    |> client
-    |> put_header("Authorization", auth_sig(opts))
+    |> signed_client
     |> OAuth2.Client.get_token!(params)
   end
 
