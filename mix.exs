@@ -1,13 +1,13 @@
 defmodule UeberauthFitbit.Mixfile do
   use Mix.Project
 
-  @version "0.2.1"
+  @version "0.2.2"
   @url "https://github.com/vinniefranco/ueberauth_fitbit"
 
   def project do
     [app: :ueberauth_fitbit,
      version: @version,
-     elixir: "~> 1.1",
+     elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      source_url: @url,
@@ -22,8 +22,8 @@ defmodule UeberauthFitbit.Mixfile do
   end
 
   defp deps do
-    [{:ueberauth, "~> 0.2"},
-      {:oauth2, "~> 0.5"}]
+    [{:ueberauth, "~> 0.4"},
+      {:oauth2, "~> 0.8"}]
   end
 
   defp description do
