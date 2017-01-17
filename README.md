@@ -30,9 +30,9 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
   5.  Update your provider configuration:
 
-        config :ueberauth, Ueberauth.Strategy.Twitter.Fitbit,
-          consumer_key: System.get_env("FITBIT_CLIENT_ID"),
-          consumer_secret: System.get_env("FITBIT_CLIENT_SECRET")
+        config :ueberauth, Ueberauth.Strategy.Fitbit.OAuth,
+          client_id: System.get_env("FITBIT_CLIENT_ID"),
+          client_secret: System.get_env("FITBIT_CLIENT_SECRET")
 
   6.  Include the Überauth plug in your controller:
 
