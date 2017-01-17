@@ -4,7 +4,8 @@ defmodule Ueberauth.Strategy.Fitbit do
   """
 
   use Ueberauth.Strategy, uid_field: :user_id,
-                          default_scope: "activity nutrition profile settings sleep social weight"
+                          default_scope: "activity nutrition profile settings sleep social weight",
+                          oauth2_module: Ueberauth.Strategy.Fitbit.OAuth
 
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth.Credentials
@@ -15,11 +16,13 @@ defmodule Ueberauth.Strategy.Fitbit do
   """
   def handle_request!(conn) do
     scopes = conn.params["scope"] || option(conn, :default_scope)
-    opts = [ scope: scopes ]
-    if conn.params["state"], do: opts = Keyword.put(opts, :state, conn.params["state"])
-    opts = Keyword.put(opts, :redirect_uri, callback_url(conn))
+    opts = [redirect_uri: callback_url(conn), scope: scopes]
 
-    redirect!(conn, Ueberauth.Strategy.Fitbit.OAuth.authorize_url!(opts))
+    opts =
+      if conn.params["state"], do: Keyword.put(opts, :state, conn.params["state"]), else: opts
+
+    module = option(conn, :oauth2_module)
+    redirect!(conn, apply(module, :authorize_url!, [opts]))
   end
 
   @doc """
@@ -27,7 +30,8 @@ defmodule Ueberauth.Strategy.Fitbit do
   """
   def handle_callback!(%Plug.Conn{ params: %{ "code" => code } } = conn) do
     opts = [redirect_uri: callback_url(conn)]
-    token = Ueberauth.Strategy.Fitbit.OAuth.get_token!([code: code], opts)
+    client = Ueberauth.Strategy.Fitbit.OAuth.get_token!([code: code], opts)
+    token = client.token
 
     if token.access_token == nil do
       set_errors!(conn, [error(token.other_params["error"], token.other_params["error_description"])])
@@ -112,7 +116,7 @@ defmodule Ueberauth.Strategy.Fitbit do
   defp fetch_user(conn, token) do
     conn = put_private(conn, :fitbit_token, token)
 
-    case OAuth2.AccessToken.get(token, "https://api.fitbit.com/1/user/-/profile.json") do
+    case Ueberauth.Strategy.Fitbit.OAuth.get(token, "/1/user/-/profile.json") do
       { :ok, %OAuth2.Response{status_code: 401, body: _body } } ->
         set_errors!(conn, [error("token", "unauthorized")])
       { :ok, %OAuth2.Response{ status_code: status_code, body: res } } when status_code in 200..399 ->
