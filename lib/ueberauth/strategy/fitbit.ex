@@ -127,7 +127,7 @@ defmodule Ueberauth.Strategy.Fitbit do
   end
 
   defp option(conn, key) do
-    Dict.get(options(conn), key, Dict.get(default_options, key))
+    Keyword.get(options(conn), key, Keyword.get(default_options(), key))
   end
 
 end
