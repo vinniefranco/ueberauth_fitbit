@@ -1,7 +1,7 @@
 defmodule UeberauthFitbit.Mixfile do
   use Mix.Project
 
-  @version "0.2.2"
+  @version "0.2.3"
   @url "https://github.com/vinniefranco/ueberauth_fitbit"
 
   def project do
@@ -12,9 +12,9 @@ defmodule UeberauthFitbit.Mixfile do
      start_permanent: Mix.env == :prod,
      source_url: @url,
      homepage_url: @url,
-     description: description,
-     package: package,
-     deps: deps]
+     description: description(),
+     package: package(),
+     deps: deps()]
   end
 
   def application do
