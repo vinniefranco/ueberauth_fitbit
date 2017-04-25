@@ -46,6 +46,15 @@ defmodule Ueberauth.Strategy.Fitbit.OAuth do
   def client(opts \\ []) do
     OAuth2.Client.new(options(opts))
   end
+  
+  @doc """
+  Construct auth signed client
+  """
+  def signed_client(opts \\ []) do
+    opts
+    |> client
+    |> put_header("Authorization", auth_sig(opts))
+  end
 
   @doc """
   Construct a signed client for token and refresh token requests
