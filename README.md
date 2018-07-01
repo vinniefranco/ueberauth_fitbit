@@ -55,7 +55,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
       get "/:provider", AuthController, :request
       get "/:provider/callback", AuthController, :callback
     end
-    ```
+ ```
 
   8. You controller needs to implement callbacks to deal with `Ueberauth.Auth` and `Ueberauth.Failure` responses.
 
